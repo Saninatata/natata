@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mansur Natata | Multidisciplinary Creative</title>
+    <meta name="description" content="Portfolio of Mansur Natata - Creative Designer, Social Media Manager & Brand Architect">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- GSAP & Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Syne', 'sans-serif'],
+                    },
+                    colors: {
+                        dark: '#050505',
+                        card: '#0f0f0f',
+                        accent: '#6366f1', // Indigo/Violet
+                        neon: '#00f3ff', // Cyan
+                    },
+                    backgroundImage: {
+                        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        :root {
+            --cursor-size: 20px;
+        }
+
+        body {
+            background-color: #050505;
+            color: #ffffff;
+            overflow-x: hidden;
+            cursor: none; /* Hiding default cursor */
+        }
+
+        /* Custom Cursor */
+        #cursor {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: var(--cursor-size);
+            height: var(--cursor-size);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            transform: translate(-50%, -50%);
+            transition: width 0.3s, height 0.3s, background-color 0.3s;
+            mix-blend-mode: difference;
+        }
+
+        #cursor.hovered {
+            width: 60px;
+            height: 60px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-color: transparent;
+            backdrop-filter: blur(2px);
+        }
+
+        /* ThreeJS Canvas */
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #050505;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #6366f1;
+        }
+
+        /* Typography Utils */
+        .text-stroke {
+            -webkit-text-stroke: 1px rgba(255,255,255,0.2);
+            color: transparent;
+            transition: all 0.5s ease;
+        }
+        .text-stroke:hover {
+            -webkit-text-stroke: 1px #00f3ff;
+            color: rgba(0, 243, 255, 0.1);
+            text-shadow: 0 0 20px rgba(0, 243, 255, 0.3);
+        }
+
+        /* Card Hover Effects */
+        .project-card {
+            transform-style: preserve-3d;
+            transform: perspective(1000px);
+        }
+        
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        /* Loader */
+        #loader {
+            position: fixed;
+            inset: 0;
+            background: #000;
+            z-index: 10000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: transform 0.8s cubic-bezier(0.7, 0, 0.3, 1);
+        }
+        .loader-line {
+            width: 0%;
+            height: 2px;
+            background: #00f3ff;
+            box-shadow: 0 0 10px #00f3ff;
+            transition: width 0.5s ease;
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-neon selection:text-black">
+
+    <!-- Custom Cursor -->
+    <div id="cursor"></div>
+
+    <!-- Loader -->
+    <div id="loader">
+        <div class="w-64 h-[2px] bg-gray-800 overflow-hidden rounded-full">
+            <div class="loader-line h-full"></div>
+        </div>
+    </div>
+
+    <!-- 3D Background -->
+    <div id="canvas-container"></div>
+
+    <!-- Navigation -->
+    <nav class="fixed w-full top-0 z-50 px-6 py-6 flex justify-between items-center mix-blend-difference">
+        <a href="#" class="font-display font-bold text-xl tracking-tighter hover-target">MN.</a>
+        <div class="hidden md:flex gap-8 text-sm font-light tracking-wide">
+            <a href="#about" class="hover:text-neon transition-colors hover-target">About</a>
+            <a href="#projects" class="hover:text-neon transition-colors hover-target">Projects</a>
+            <a href="#services" class="hover:text-neon transition-colors hover-target">Services</a>
+            <a href="#contact" class="hover:text-neon transition-colors hover-target">Contact</a>
+        </div>
+        <a href="#contact" class="font-sans text-xs border border-white/20 px-4 py-2 rounded-full hover:bg-white hover:text-black transition-all duration-300 hover-target">
+            Let's Talk
+        </a>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="relative h-screen flex flex-col justify-center items-center text-center px-4 overflow-hidden">
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-accent/20 rounded-full blur-[120px] pointer-events-none animate-pulse"></div>
+        
+        <p class="hero-subtitle text-neon/80 tracking-[0.5em] text-xs md:text-sm mb-6 font-medium uppercase opacity-0 translate-y-4">
+            Portfolio 2025
+        </p>
+        
+        <h1 class="hero-title font-display text-6xl md:text-8xl lg:text-9xl font-extrabold tracking-tighter leading-none mb-4 z-10">
+            <span class="block overflow-hidden"><span class="block translate-y-full">MANSUR</span></span>
+            <span class="block overflow-hidden"><span class="block translate-y-full text-stroke">NATATA</span></span>
+        </h1>
+
+        <div class="hero-roles flex flex-col md:flex-row gap-2 md:gap-8 items-center text-sm md:text-base font-light text-gray-400 mt-8 opacity-0">
+            <span class="flex items-center gap-2"><i data-lucide="pen-tool" class="w-4 h-4"></i> Creative Designer</span>
+            <span class="hidden md:block w-1 h-1 bg-gray-600 rounded-full"></span>
+            <span class="flex items-center gap-2"><i data-lucide="share-2" class="w-4 h-4"></i> Social Media Manager</span>
+            <span class="hidden md:block w-1 h-1 bg-gray-600 rounded-full"></span>
+            <span class="flex items-center gap-2"><i data-lucide="box" class="w-4 h-4"></i> Brand Architect</span>
+            <span class="hidden md:block w-1 h-1 bg-gray-600 rounded-full"></span>
+            <span class="flex items-center gap-2"><i data-lucide="monitor" class="w-4 h-4"></i> Web & App Designer</span>
+        </div>
+
+        <div class="absolute bottom-10 left-1/2 -translate-x-1/2 animate-bounce opacity-50">
+            <i data-lucide="arrow-down" class="w-6 h-6 text-white"></i>
+        </div>
+    </header>
+
+    <!-- About Section -->
+    <section id="about" class="py-32 px-6 md:px-20 max-w-7xl mx-auto relative">
+        <div class="grid md:grid-cols-2 gap-16 items-center">
+            <div class="relative">
+                <div class="w-full h-[500px] bg-gray-900/50 rounded-lg overflow-hidden relative glass-panel border-l-4 border-neon group hover-target">
+                    <!-- Abstract representation of self -->
+                    <div class="absolute inset-0 bg-gradient-to-br from-gray-800 to-black opacity-50"></div>
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <span class="font-display text-9xl font-bold opacity-5 group-hover:opacity-10 transition-opacity duration-500">MN</span>
+                    </div>
+                    <div class="absolute bottom-6 left-6">
+                        <div class="text-xs text-neon tracking-widest mb-1">BASED IN</div>
+                        <div class="text-white font-bold">KADUNA, NIGERIA</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="about-text">
+                <h2 class="text-3xl md:text-5xl font-display font-bold mb-8 leading-tight">
+                    Bridging the gap between <span class="text-neon">structure</span> and <span class="text-accent">digital experience</span>.
+                </h2>
+                <p class="text-gray-400 text-lg leading-relaxed mb-6 text-reveal">
+                    I am a multidisciplinary creative operating at the intersection of design, architecture, and digital branding. I don't just manage visuals; I architect brand identities that live, breathe, and convert.
+                </p>
+                <p class="text-gray-400 text-lg leading-relaxed mb-8 text-reveal">
+                    From scaling tech startups to visualizing architectural marvels, my approach uses data-driven strategy wrapped in high-end aesthetics.
+                </p>
+                
+                <div class="flex flex-wrap gap-4">
+                    <div class="px-4 py-2 border border-white/10 rounded-full text-xs uppercase tracking-widest hover:bg-white hover:text-black transition-colors cursor-default">UI/UX</div>
+                    <div class="px-4 py-2 border border-white/10 rounded-full text-xs uppercase tracking-widest hover:bg-white hover:text-black transition-colors cursor-default">Web & App</div>
+                    <div class="px-4 py-2 border border-white/10 rounded-full text-xs uppercase tracking-widest hover:bg-white hover:text-black transition-colors cursor-default">Motion</div>
+                    <div class="px-4 py-2 border border-white/10 rounded-full text-xs uppercase tracking-widest hover:bg-white hover:text-black transition-colors cursor-default">Architecture</div>
+                    <div class="px-4 py-2 border border-white/10 rounded-full text-xs uppercase tracking-widest hover:bg-white hover:text-black transition-colors cursor-default">Crypto</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Projects Section -->
+    <section id="projects" class="py-32 px-6 md:px-12 relative bg-black/50">
+        <div class="max-w-[1400px] mx-auto">
+            <div class="flex justify-between items-end mb-20">
+                <div>
+                    <span class="text-neon text-xs tracking-[0.2em] uppercase block mb-2">Selected Works</span>
+                    <h2 class="text-5xl md:text-7xl font-display font-bold text-white">Portfolio</h2>
+                </div>
+                <div class="hidden md:block text-right text-gray-500 text-sm">
+                    SCROLL TO EXPLORE<br>2023 - 2025
+                </div>
+            </div>
+
+            <!-- Portfolio Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+
+                <!-- Project 1 -->
+                <div class="group project-card hover-target">
+                    <div class="relative h-[400px] overflow-hidden rounded-xl bg-card border border-white/5 transition-all duration-500 group-hover:border-neon/50">
+                        <div class="absolute inset-0 bg-gradient-to-b from-transparent to-black/90 z-10"></div>
+                        <!-- Placeholder abstract visual -->
+                        <div class="w-full h-full bg-gray-800 group-hover:scale-110 transition-transform duration-700 flex items-center justify-center">
+                            <div class="w-20 h-20 border-2 border-white rounded-full flex items-center justify-center text-2xl font-display">BG</div>
+                        </div>
+                        
+                        <div class="absolute bottom-0 left-0 w-full p-6 z-20 translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
+                            <div class="flex justify-between items-center mb-2">
+                                <h3 class="text-2xl font-display font-bold">BELL.GEE</h3>
+                                <i data-lucide="arrow-up-right" class="w-5 h-5 text-neon opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                            </div>
+                            <p class="text-gray-400 text-sm">Clothing Brand Identity & Strategy</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Project 2 -->
+                <div class="group project-card hover-target">
+                    <div class="relative h-[400px] overflow-hidden rounded-xl bg-card border border-white/5 transition-all duration-500 group-hover:border-neon/50">
+                        <div class="absolute inset-0 bg-gradient-to-b from-transparent to-black/90 z-10"></div>
+                        <div class="w-full h-full bg-[#1a1a2e] group-hover:scale-110 transition-transform duration-700 flex items-center justify-center">
+                            <div class="text-neon font-display text-4xl tracking-widest blur-[1px]">HYPER</div>
+                        </div>
+                        <div class="absolute bottom-0 left-0 w-full p-6 z-20 translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
+                            <div class="flex justify-between items-center mb-2">
+                                <h3 class="text-2xl font-display font-bold">Hyper Bird</h3>
+                                <i data-lucide="arrow-up-right" class="w-5 h-5 text-neon opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                            </div>
+                            <p class="text-gray-400 text-sm">Event Poster Design</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Project 3 -->
+                <div class="group project-card hover-target">
+                    <div class="relative h-[400px] overflow-hidden rounded-xl bg-card border border-white/5 transition-all duration-500 group-hover:border-neon/50">
+                        <div class="absolute inset-0 bg-gradient-to-b from-transparent to-black/90 z-10"></div>
+                        <div class="w-full h-full bg-gray-900 group-hover:scale-110 transition-transform duration-700 flex flex-col items-center justify-center gap-2">
+                            <div class="flex gap-2">
+                                <div class="w-12 h-16 bg-white/10 rounded border border-white/20"></div>
+                                <div class="w-12 h-16 bg-neon/20 rounded border border-neon/40"></div>
+                                <div class="w-12 h-16 bg-white/10 rounded border border-white/20"></div>
+                            </div>
+                        </div>
+                        <div class="absolute bottom-0 left-0 w-full p-6 z-20 translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
+                            <div class="flex justify-between items-center mb-2">
+                                <h3 class="text-2xl font-display font-bold">30-Day Challenge</h3>
+                                <i data-lucide="arrow-up-right" class="w-5 h-5 text-neon opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                            </div>
+                            <p class="text-gray-400 text-sm">Day 1–3 Completed • Daily UI</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Project 4 -->
+                <div class="group project-card hover-target lg:col-span-2">
+                    <div class="relative h-[400px] overflow-hidden rounded-xl bg-card border border-white/5 transition-all duration-500 group-hover:border-neon/50">
+                        <div class="absolute inset-0 bg-gradient-to-b from-transparent to-black/90 z-10"></div>
+                        <div class="w-full h-full bg-gradient-to-r from-purple-900 to-blue-900 group-hover:scale-110 transition-transform duration-700 flex items-center justify-center">
+                             <i data-lucide="bitcoin" class="w-32 h-32 text-white/10"></i>
+                        </div>
+                        <div class="absolute bottom-0 left-0 w-full p-6 z-20 translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
+                            <div class="flex justify-between items-center mb-2">
+                                <h3 class="text-2xl font-display font-bold">Spell Wallet</h3>
+                                <span class="px-3 py-1 rounded-full border border-neon text-neon text-xs">Crypto</span>
+                            </div>
+                            <p class="text-gray-400 text-sm">Mining Visuals & Bot Content Generation</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Project 5 -->
+                <div class="group project-card hover-target">
+                    <div class="relative h-[400px] overflow-hidden rounded-xl bg-card border border-white/5 transition-all duration-500 group-hover:border-neon/50">
+                        <div class="absolute inset-0 bg-gradient-to-b from-transparent to-black/90 z-10"></div>
+                        <div class="w-full h-full bg-black group-hover:scale-110 transition-transform duration-700 flex items-center justify-center relative">
+                            <div class="absolute w-full h-full opacity-20" style="background-image: radial-gradient(#fff 1px, transparent 1px); background-size: 20px 20px;"></div>
+                            <i data-lucide="gift" class="w-16 h-16 text-neon"></i>
+                        </div>
+                        <div class="absolute bottom-0 left-0 w-full p-6 z-20 translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
+                            <div class="flex justify-between items-center mb-2">
+                                <h3 class="text-2xl font-display font-bold">Web Agency Promo</h3>
+                                <i data-lucide="arrow-up-right" class="w-5 h-5 text-neon opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                            </div>
+                            <p class="text-gray-400 text-sm">High-conversion Giveaway Graphics</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Project 6 -->
+                <div class="group project-card hover-target">
+                    <div class="relative h-[400px] overflow-hidden rounded-xl bg-card border border-white/5 transition-all duration-500 group-hover:border-neon/50">
+                        <div class="absolute inset-0 bg-gradient-to-b from-transparent to-black/90 z-10"></div>
+                        <div class="w-full h-full bg-[#2a2a2a] group-hover:scale-110 transition-transform duration-700 flex items-center justify-center">
+                             <!-- Architectural lines -->
+                             <div class="w-32 h-32 border border-white/30 transform rotate-45"></div>
+                        </div>
+                        <div class="absolute bottom-0 left-0 w-full p-6 z-20 translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
+                            <div class="flex justify-between items-center mb-2">
+                                <h3 class="text-2xl font-display font-bold">Arch. Case Studies</h3>
+                                <i data-lucide="arrow-up-right" class="w-5 h-5 text-neon opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                            </div>
+                            <p class="text-gray-400 text-sm">Interior Design Presentation Layouts</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Project 7 -->
+                <div class="group project-card hover-target">
+                    <div class="relative h-[400px] overflow-hidden rounded-xl bg-card border border-white/5 transition-all duration-500 group-hover:border-neon/50">
+                        <div class="absolute inset-0 bg-gradient-to-b from-transparent to-black/90 z-10"></div>
+                        <div class="w-full h-full bg-pink-900/20 group-hover:scale-110 transition-transform duration-700 flex items-center justify-center">
+                             <i data-lucide="heart" class="w-16 h-16 text-pink-500 fill-pink-500/20"></i>
+                        </div>
+                        <div class="absolute bottom-0 left-0 w-full p-6 z-20 translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
+                            <div class="flex justify-between items-center mb-2">
+                                <h3 class="text-2xl font-display font-bold">HeartConnect</h3>
+                                <i data-lucide="arrow-up-right" class="w-5 h-5 text-neon opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                            </div>
+                            <p class="text-gray-400 text-sm">Dating App UI/UX & Prototyping</p>
+                        </div>
+                    </div>
+                </div>
+
+                 <!-- Project 8 -->
+                 <div class="group project-card hover-target">
+                    <div class="relative h-[400px] overflow-hidden rounded-xl bg-card border border-white/5 transition-all duration-500 group-hover:border-neon/50">
+                        <div class="absolute inset-0 bg-gradient-to-b from-transparent to-black/90 z-10"></div>
+                        <div class="w-full h-full bg-blue-900/20 group-hover:scale-110 transition-transform duration-700 flex items-center justify-center">
+                             <i data-lucide="users" class="w-16 h-16 text-blue-400"></i>
+                        </div>
+                        <div class="absolute bottom-0 left-0 w-full p-6 z-20 translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
+                            <div class="flex justify-between items-center mb-2">
+                                <h3 class="text-2xl font-display font-bold">StudioLink</h3>
+                                <i data-lucide="arrow-up-right" class="w-5 h-5 text-neon opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                            </div>
+                            <p class="text-gray-400 text-sm">Platform for Designers & Architects</p>
+                        </div>
+                    </div>
+                </div>
+
+                 <!-- Project 9 -->
+                 <div class="group project-card hover-target">
+                    <div class="relative h-[400px] overflow-hidden rounded-xl bg-card border border-white/5 transition-all duration-500 group-hover:border-neon/50">
+                        <div class="absolute inset-0 bg-gradient-to-b from-transparent to-black/90 z-10"></div>
+                        <div class="w-full h-full bg-yellow-900/10 group-hover:scale-110 transition-transform duration-700 flex items-center justify-center">
+                             <div class="text-center">
+                                <i data-lucide="book-open" class="w-12 h-12 text-yellow-500 mx-auto mb-2"></i>
+                                <span class="font-bold text-yellow-500">GUMROAD</span>
+                             </div>
+                        </div>
+                        <div class="absolute bottom-0 left-0 w-full p-6 z-20 translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
+                            <div class="flex justify-between items-center mb-2">
+                                <h3 class="text-2xl font-display font-bold">Ebook Launch</h3>
+                                <i data-lucide="arrow-up-right" class="w-5 h-5 text-neon opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                            </div>
+                            <p class="text-gray-400 text-sm">Landing Page & Digital Product Design</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Services Section -->
+    <section id="services" class="py-32 px-6 md:px-20 max-w-7xl mx-auto">
+        <div class="mb-20 text-center">
+            <span class="text-neon text-xs tracking-[0.2em] uppercase">Expertise</span>
+            <h2 class="text-4xl md:text-6xl font-display font-bold mt-2">Services</h2>
+        </div>
+
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            
+            <!-- 1. Branding -->
+            <div class="service-card opacity-0 translate-y-12 p-8 glass-panel rounded-2xl hover:bg-white/5 transition-all duration-300 group hover-target hover:-translate-y-2 border border-white/5 hover:border-neon/30">
+                <div class="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center mb-6 text-neon group-hover:scale-110 transition-transform duration-300">
+                    <i data-lucide="fingerprint"></i>
+                </div>
+                <h3 class="text-xl font-bold mb-4 group-hover:text-neon transition-colors">Branding & Identity</h3>
+                <div class="flex flex-wrap gap-2">
+                    <span class="px-2 py-1 bg-white/5 rounded text-[10px] text-gray-400 uppercase tracking-wider">Logo Design</span>
+                    <span class="px-2 py-1 bg-white/5 rounded text-[10px] text-gray-400 uppercase tracking-wider">Identity Systems</span>
+                    <span class="px-2 py-1 bg-white/5 rounded text-[10px] text-gray-400 uppercase tracking-wider">Brand Guidelines</span>
+                    <span class="px-2 py-1 bg-white/5 rounded text-[10px] text-gray-400 uppercase tracking-wider">Rebranding</span>
+                    <span class="px-2 py-1 bg-white/5 rounded text-[10px] text-gray-400 uppercase tracking-wider">Typography</span>
+                </div>
+            </div>
+
+            <!-- 2. Graphic Design -->
+            <div class="service-card opacity-0 translate-y-12 p-8 glass-panel rounded-2xl hover:bg-white/5 transition-all duration-300 group hover-target hover:-translate-y-2 border border-white/5 hover:border-neon/30">
+                <div class="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center mb-6 text-neon group-hover:scale-110 transition-transform duration-300">
+                    <i data-lucide="palette"></i>
+                </div>
+                <h3 class="text-xl font-bold mb-4 group-hover:text-neon transition-colors">Graphic Design</h3>
+                <div class="flex flex-wrap gap-2">
+                    <span class="px-2 py-1 bg-white/5 rounded text-[10px] text-gray-400 uppercase tracking-wider">Flyers & Posters</span>
+                    <span class="px-2 py-1 bg-white/5 rounded text-[10px] text-gray-400 uppercase tracking-wider">Social Banners</span>
+                    <span class="px-2 py-1 bg-white/5 rounded text-[10px] text-gray-400 uppercase tracking-wider">Ad Creatives</span>
+                    <span class="px-2 py-1 bg-white/5 rounded text-[10px] text-gray-400 uppercase tracking-wider">Merch Mockups</span>
+                </div>
+            </div>
+
+            <!-- 3. Social Media -->
+            <div class="service-card opacity-0 translate-y-12 p-8 glass-panel rounded-2xl hover:bg-white/5 transition-all duration-300 group hover-target hover:-translate-y-2 border border-white/5 hover:border-neon/30">
+                <div class="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center mb-6 text-neon group-hover:scale-110 transition-transform duration-300">
+                    <i data-lucide="instagram"></i>
+                </div>
+                <h3 class="text-xl font-bold mb-4 group-hover:text-neon transition-colors">Social Media Mgmt.</h3>
+                <div class="flex flex-wrap gap-2">
+                    <span class="px-2 py-1 bg-white/5 rounded text-[10px] text-gray-400 uppercase tracking-wider">Full Management</span>
+                    <span class="px-2 py-1 bg-white/5 rounded text-[10px] text-gray-400 uppercase tracking-wider">Growth Strategy</span>
+                    <span class="px-2 py-1 bg-white/5 rounded text-[10px] text-gray-400 uppercase tracking-wider">Verification</span>
+                    <span class="px-2 py-1 bg-white/5 rounded text-[10px] text-gray-400 uppercase tracking-wider">Content Planning</span>
+                </div>
+            </div>
+
+            <!-- 4. UI/UX & Web -->
+            <div class="service-card opacity-0 translate-y-12 p-8 glass-panel rounded-2xl hover:bg-white/5 transition-all duration-300 group hover-target hover:-translate-y-2 border border-white/5 hover:border-neon/30">
+                <div class="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center mb-6 text-neon group-hover:scale-110 transition-transform duration-300">
+                    <i data-lucide="layout"></i>
+                </div>
+                <h3 class="text-xl font-bold mb-4 group-hover:text-neon transition-colors">UI/UX & Web Design</h3>
+                <div class="flex flex-wrap gap-2">
+                    <span class="px-2 py-1 bg-white/5 rounded text-[10px] text-gray-400 uppercase tracking-wider">Website Design</span>
+                    <span class="px-2 py-1 bg-white/5 rounded text-[10px] text-gray-400 uppercase tracking-wider">Mobile App UI</span>
+                    <span class="px-2 py-1 bg-white/5 rounded text-[10px] text-gray-400 uppercase tracking-wider">Wireframes</span>
+                    <span class="px-2 py-1 bg-white/5 rounded text-[10px] text-gray-400 uppercase tracking-wider">Landing Pages</span>
+                    <span class="px-2 py-1 bg-white/5 rounded text-[10px] text-gray-400 uppercase tracking-wider">Motion UI</span>
+                </div>
+            </div>
+
+            <!-- 5. AI & Automation -->
+            <div class="service-card opacity-0 translate-y-12 p-8 glass-panel rounded-2xl hover:bg-white/5 transition-all duration-300 group hover-target hover:-translate-y-2 border border-white/5 hover:border-neon/30">
+                <div class="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center mb-6 text-neon group-hover:scale-110 transition-transform duration-300">
+                    <i data-lucide="bot"></i>
+                </div>
+                <h3 class="text-xl font-bold mb-4 group-hover:text-neon transition-colors">AI & Automation</h3>
+                <div class="flex flex-wrap gap-2">
+                    <span class="px-2 py-1 bg-white/5 rounded text-[10px] text-gray-400 uppercase tracking-wider">Chatbot Setup</span>
+                    <span class="px-2 py-1 bg-white/5 rounded text-[10px] text-gray-400 uppercase tracking-wider">Workflow Auto</span>
+                    <span class="px-2 py-1 bg-white/5 rounded text-[10px] text-gray-400 uppercase tracking-wider">AI Content Systems</span>
+                    <span class="px-2 py-1 bg-white/5 rounded text-[10px] text-gray-400 uppercase tracking-wider">Crypto Bot UI</span>
+                </div>
+            </div>
+
+            <!-- 6. Digital Products -->
+            <div class="service-card opacity-0 translate-y-12 p-8 glass-panel rounded-2xl hover:bg-white/5 transition-all duration-300 group hover-target hover:-translate-y-2 border border-white/5 hover:border-neon/30">
+                <div class="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center mb-6 text-neon group-hover:scale-110 transition-transform duration-300">
+                    <i data-lucide="shopping-bag"></i>
+                </div>
+                <h3 class="text-xl font-bold mb-4 group-hover:text-neon transition-colors">Digital Products</h3>
+                <div class="flex flex-wrap gap-2">
+                    <span class="px-2 py-1 bg-white/5 rounded text-[10px] text-gray-400 uppercase tracking-wider">Ebook Design</span>
+                    <span class="px-2 py-1 bg-white/5 rounded text-[10px] text-gray-400 uppercase tracking-wider">Course Design</span>
+                    <span class="px-2 py-1 bg-white/5 rounded text-[10px] text-gray-400 uppercase tracking-wider">Sales Funnels</span>
+                    <span class="px-2 py-1 bg-white/5 rounded text-[10px] text-gray-400 uppercase tracking-wider">Gumroad Setup</span>
+                </div>
+            </div>
+
+            <!-- 7. Content Direction -->
+            <div class="service-card opacity-0 translate-y-12 p-8 glass-panel rounded-2xl hover:bg-white/5 transition-all duration-300 group hover-target hover:-translate-y-2 border border-white/5 hover:border-neon/30">
+                <div class="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center mb-6 text-neon group-hover:scale-110 transition-transform duration-300">
+                    <i data-lucide="clapperboard"></i>
+                </div>
+                <h3 class="text-xl font-bold mb-4 group-hover:text-neon transition-colors">Content Direction</h3>
+                <div class="flex flex-wrap gap-2">
+                    <span class="px-2 py-1 bg-white/5 rounded text-[10px] text-gray-400 uppercase tracking-wider">Brand Storytelling</span>
+                    <span class="px-2 py-1 bg-white/5 rounded text-[10px] text-gray-400 uppercase tracking-wider">Campaign Ideation</span>
+                    <span class="px-2 py-1 bg-white/5 rounded text-[10px] text-gray-400 uppercase tracking-wider">Creative Planning</span>
+                    <span class="px-2 py-1 bg-white/5 rounded text-[10px] text-gray-400 uppercase tracking-wider">Visual Strategy</span>
+                </div>
+            </div>
+
+            <!-- 8. Architecture Visuals -->
+            <div class="service-card opacity-0 translate-y-12 p-8 glass-panel rounded-2xl hover:bg-white/5 transition-all duration-300 group hover-target hover:-translate-y-2 border border-white/5 hover:border-neon/30">
+                <div class="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center mb-6 text-neon group-hover:scale-110 transition-transform duration-300">
+                    <i data-lucide="building-2"></i>
+                </div>
+                <h3 class="text-xl font-bold mb-4 group-hover:text-neon transition-colors">Arch. Visual Content</h3>
+                <div class="flex flex-wrap gap-2">
+                    <span class="px-2 py-1 bg-white/5 rounded text-[10px] text-gray-400 uppercase tracking-wider">Diagram Layouts</span>
+                    <span class="px-2 py-1 bg-white/5 rounded text-[10px] text-gray-400 uppercase tracking-wider">Concept Boards</span>
+                    <span class="px-2 py-1 bg-white/5 rounded text-[10px] text-gray-400 uppercase tracking-wider">Presentation Sheets</span>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="py-32 px-6 md:px-20 relative overflow-hidden">
+        <!-- Background Glow -->
+        <div class="absolute right-0 bottom-0 w-[600px] h-[600px] bg-neon/10 rounded-full blur-[120px] pointer-events-none"></div>
+
+        <div class="max-w-4xl mx-auto text-center relative z-10">
+            <h2 class="text-5xl md:text-7xl font-display font-bold mb-6">Let's Build Something <span class="text-stroke">Iconic</span></h2>
+            <p class="text-gray-400 mb-12 text-lg">Have a project in mind? Let's turn your vision into a digital masterpiece.</p>
+
+            <form class="max-w-xl mx-auto space-y-8 text-left">
+                <div class="relative group">
+                    <input type="text" id="name" placeholder=" " class="w-full bg-transparent border-b border-gray-700 py-4 outline-none focus:border-neon transition-colors text-lg peer">
+                    <label for="name" class="absolute left-0 top-4 text-gray-500 transition-all duration-300 peer-focus:-translate-y-6 peer-focus:text-xs peer-focus:text-neon peer-[&:not(:placeholder-shown)]:-translate-y-6 peer-[&:not(:placeholder-shown)]:text-xs">Your Name</label>
+                </div>
+                
+                <div class="relative group">
+                    <input type="email" id="email" placeholder=" " class="w-full bg-transparent border-b border-gray-700 py-4 outline-none focus:border-neon transition-colors text-lg peer">
+                    <label for="email" class="absolute left-0 top-4 text-gray-500 transition-all duration-300 peer-focus:-translate-y-6 peer-focus:text-xs peer-focus:text-neon peer-[&:not(:placeholder-shown)]:-translate-y-6 peer-[&:not(:placeholder-shown)]:text-xs">Email Address</label>
+                </div>
+
+                <div class="relative group">
+                    <textarea id="message" placeholder=" " rows="1" class="w-full bg-transparent border-b border-gray-700 py-4 outline-none focus:border-neon transition-colors text-lg peer resize-none"></textarea>
+                    <label for="message" class="absolute left-0 top-4 text-gray-500 transition-all duration-300 peer-focus:-translate-y-6 peer-focus:text-xs peer-focus:text-neon peer-[&:not(:placeholder-shown)]:-translate-y-6 peer-[&:not(:placeholder-shown)]:text-xs">Project Details</label>
+                </div>
+
+                <button type="button" id="submit-btn" class="w-full py-4 bg-white text-black font-display font-bold tracking-widest hover:bg-neon transition-colors duration-300 mt-8 hover-target">
+                    SEND PROPOSAL
+                </button>
+            </form>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-12 border-t border-white/5 px-6 md:px-20">
+        <div class="flex flex-col md:flex-row justify-between items-center gap-6">
+            <div>
+                <h3 class="font-display font-bold text-2xl">MANSUR NATATA</h3>
+                <p class="text-gray-600 text-xs">© 2025 All Rights Reserved.</p>
+            </div>
+            
+            <div class="flex gap-6">
+                <a href="https://www.instagram.com/_natata.__/" target="_blank" class="text-gray-400 hover:text-white transition-colors hover-target"><i data-lucide="instagram"></i></a>
+                <a href="https://twitter.com/mansur_sanee_" target="_blank" class="text-gray-400 hover:text-white transition-colors hover-target"><i data-lucide="twitter"></i></a>
+                <a href="#" class="text-gray-400 hover:text-white transition-colors hover-target"><i data-lucide="linkedin"></i></a>
+                <a href="#" class="text-gray-400 hover:text-white transition-colors hover-target"><i data-lucide="dribbble"></i></a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // --- Initialization ---
+        // Force icons to render
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+
+        // --- Contact Form Logic ---
+        const submitBtn = document.getElementById('submit-btn');
+        if (submitBtn) {
+            submitBtn.addEventListener('click', () => {
+                const name = document.getElementById('name').value;
+                const email = document.getElementById('email').value;
+                const message = document.getElementById('message').value;
+                
+                // Validation (Basic)
+                if(!name || !email || !message) {
+                    alert('Please fill in all fields to send a proposal.');
+                    return;
+                }
+
+                const recipients = "sanimansur24@gmail.com,thestudios.service@gmail.com";
+                const subject = `Project Proposal from ${name}`;
+                const body = `Name: ${name}\nEmail: ${email}\n\nProject Details:\n${message}`;
+                
+                // Open Email Client
+                window.location.href = `mailto:${recipients}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+            });
+        }
+
+        // --- Loading Screen (Robust) ---
+        function hideLoader() {
+             const loader = document.querySelector('#loader');
+             const loaderLine = document.querySelector('.loader-line');
+             
+             if(loaderLine) loaderLine.style.width = '100%';
+             
+             setTimeout(() => {
+                gsap.to('#loader', {
+                    y: '-100%',
+                    duration: 1,
+                    ease: 'power4.inOut',
+                    onComplete: () => {
+                        revealHero();
+                        // CRITICAL FIX: Refresh ScrollTrigger after loader hides
+                        // This ensures animations calculate positions correctly
+                        ScrollTrigger.refresh();
+                    }
+                });
+            }, 500);
+        }
+
+        // Check if loaded, otherwise wait, otherwise force.
+        if (document.readyState === 'complete') {
+            hideLoader();
+        } else {
+            window.addEventListener('load', hideLoader);
+            // Fallback: If something hangs (like a font or 3D script), force open after 3 seconds
+            setTimeout(hideLoader, 3000); 
+        }
+
+        // --- Custom Cursor Logic ---
+        const cursor = document.getElementById('cursor');
+        const hoverTargets = document.querySelectorAll('.hover-target');
+
+        document.addEventListener('mousemove', (e) => {
+            gsap.to(cursor, {
+                x: e.clientX,
+                y: e.clientY,
+                duration: 0.1,
+                ease: 'power2.out'
+            });
+        });
+
+        hoverTargets.forEach(target => {
+            target.addEventListener('mouseenter', () => cursor.classList.add('hovered'));
+            target.addEventListener('mouseleave', () => cursor.classList.remove('hovered'));
+        });
+
+        // --- Three.js Background (Particles) ---
+        // Wrapped in try/catch to prevent crash if Three fails
+        try {
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+            
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            const container = document.getElementById('canvas-container');
+            if (container) container.appendChild(renderer.domElement);
+
+            // Particles
+            const particlesGeometry = new THREE.BufferGeometry();
+            const particlesCount = 1500; // Optimized count
+            
+            const posArray = new Float32Array(particlesCount * 3);
+            
+            for(let i = 0; i < particlesCount * 3; i++) {
+                posArray[i] = (Math.random() - 0.5) * 10; 
+            }
+            
+            particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+            
+            const particlesMaterial = new THREE.PointsMaterial({
+                size: 0.015,
+                color: 0x6366f1, 
+                transparent: true,
+                opacity: 0.8,
+            });
+            
+            const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
+            scene.add(particlesMesh);
+
+            let mouseX = 0;
+            let mouseY = 0;
+
+            document.addEventListener('mousemove', (event) => {
+                mouseX = event.clientX / window.innerWidth - 0.5;
+                mouseY = event.clientY / window.innerHeight - 0.5;
+            });
+
+            camera.position.z = 3;
+
+            const clock = new THREE.Clock();
+
+            function animate() {
+                requestAnimationFrame(animate);
+                const elapsedTime = clock.getElapsedTime();
+
+                particlesMesh.rotation.y = elapsedTime * 0.05;
+                particlesMesh.rotation.x = mouseY * 0.5;
+                particlesMesh.rotation.y += mouseX * 0.5;
+
+                renderer.render(scene, camera);
+            }
+            animate();
+
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+        } catch (e) {
+            console.warn("3D Background failed to initialize", e);
+        }
+
+        // --- GSAP Animations ---
+        gsap.registerPlugin(ScrollTrigger);
+
+        function revealHero() {
+            const tl = gsap.timeline();
+            
+            tl.to('.hero-title span span', {
+                y: 0,
+                duration: 1.5,
+                stagger: 0.2,
+                ease: 'power4.out'
+            })
+            .to('.hero-subtitle', {
+                opacity: 1,
+                y: 0,
+                duration: 1,
+                ease: 'power3.out'
+            }, '-=1')
+            .to('.hero-roles', {
+                opacity: 1,
+                duration: 1,
+            }, '-=0.5');
+        }
+
+        // Scroll Triggers
+        gsap.utils.toArray('.text-reveal').forEach(text => {
+            gsap.from(text, {
+                scrollTrigger: {
+                    trigger: text,
+                    start: "top 80%",
+                },
+                opacity: 0,
+                y: 30,
+                duration: 1.5,
+                ease: "power3.out"
+            });
+        });
+
+        gsap.from('.project-card', {
+            scrollTrigger: {
+                trigger: '#projects',
+                start: "top 70%",
+            },
+            opacity: 0,
+            y: 100,
+            duration: 1,
+            stagger: 0.2,
+            ease: "power3.out"
+        });
+
+        // FIXED: Replaced problematic 'from' tween with Batch logic
+        // The cards now have 'opacity-0' and 'translate-y-12' in HTML
+        // We animate them TO visible state as they enter view individually
+        ScrollTrigger.batch(".service-card", {
+            onEnter: batch => gsap.to(batch, {
+                opacity: 1,
+                y: 0,
+                scale: 1,
+                stagger: 0.1,
+                duration: 0.8,
+                ease: "back.out(1.7)",
+                overwrite: true
+            }),
+            // Ensures if they were scrolled past and we scroll back up/down, they show
+            start: "top 90%",
+            once: true // Play only once
+        });
+
+    </script>
+</body>
+</html>
